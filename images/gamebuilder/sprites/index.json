@@ -4,6 +4,7 @@
     { "name": "Pew", "src": "pew.png", "rows": 4, "cols": 4 },
     { "name": "Slime", "src": "slime.png", "rows": 4, "cols": 4 },
     { "name": "Ufos", "src": "ufos.png", "rows": 4, "cols": 3 },
-    { "name": "Dew", "src": "dew.png", "rows": 4, "cols": 4 }
+    { "name": "Dew", "src": "dew.png", "rows": 4, "cols": 4 },
+    { "name": "aRCHIE", "src": "mcarchie.png", "rows": 4, "cols": 4 }
 
 ]
