@@ -2,5 +2,5 @@
   { "name": "Alien Planet", "src": "alien_planet.jpg" },
   { "name": "Sky kingdom", "src": "clouds.jpg" },
   { "name": "Small Boat", "src": "wasd.png" },
-  { "name": "Mountains", "src": "image.png" },
+  { "name": "Mountains", "src": "image.png" }
 ]
