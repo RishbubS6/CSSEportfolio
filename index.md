@@ -4,7 +4,7 @@ title: I'm Rishab Shyamal
 hide: true
 ---
 
-Hi! My name is Rishab Shyamal 
+Hi! My name is Rishab Shyamal, and this is my coding portfolio
 
 ### Development Environment
 
