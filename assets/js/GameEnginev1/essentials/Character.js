@@ -1,5 +1,4 @@
 import GameObject from './GameObject.js';
-import { Transform } from './Transform.js';
 
 // Define non-mutable constants as defaults
 const SCALE_FACTOR = 25; // 1/nth of the height of the canvas
@@ -20,13 +19,14 @@ const PIXELS = {height: 16, width: 16};
  * making the code more modular and easier to maintain. By using this pattern, we can create
  * multiple instances of the Player class, each with its own state and behavior.
  * 
- * @property {Object} transform - The current position of the object.
+ * @property {Object} position - The current position of the object.
+ * @property {Object} velocity - The current velocity of the object.
  * @property {Object} scale - The scale of the object based on the game environment.
  * @property {number} size - The size of the object.
  * @property {number} width - The width of the object.
  * @property {number} height - The height of the object.
- * @property {number} speedX - The velocity of the object along the x-axis.
- * @property {number} speedY - The velocity of the object along the y-axis.
+ * @property {number} xVelocity - The velocity of the object along the x-axis.
+ * @property {number} yVelocity - The velocity of the object along the y-axis.
  * @property {Image} spriteSheet - The sprite sheet image for the object.
  * @property {number} frameIndex - The current frame index for animation.
  * @property {number} frameCount - The total number of frames for each direction.
@@ -64,8 +64,9 @@ class Character extends GameObject {
         this.gameEnv.container.appendChild(this.canvas);
         this.canvas.style = "image-rendering: pixelated;";
 
-        // Set initial object properties
-        this.transform = new Transform(data?.INIT_POSITION?.x ?? 0, data?.INIT_POSITION?.y ?? 0); // Position Data
+        // Set initial object properties 
+        this.x = 0;
+        this.y = 0;
         this.frame = 0;
         
         // Initialize the object's properties 
@@ -74,12 +75,26 @@ class Character extends GameObject {
         this.stepFactor = data.STEP_FACTOR || STEP_FACTOR;
         this.animationRate = data.ANIMATION_RATE || ANIMATION_RATE;
         
+        // Handle INIT_POSITION with percentage support (0.0-1.0 decimal)
+        const initPos = data.INIT_POSITION || INIT_POSITION;
+        // If values are between 0-1, treat as percentages; otherwise use as pixels
+        if (initPos.x >= 0 && initPos.x <= 1 && initPos.y >= 0 && initPos.y <= 1) {
+            // Convert decimal percentages to pixel positions
+            this.position = {
+                x: initPos.x * this.gameEnv.innerWidth,
+                y: initPos.y * this.gameEnv.innerHeight
+            };
+        } else {
+            // Use as pixel values (backward compatibility)
+            this.position = { ...initPos };
+        }
+        
         // Always set spriteData, even if there's no sprite sheet
         this.spriteData = data;
         
         // Check if sprite data is provided
         if (data && data.src) {
-            // Load the sprite sheet 
+            // Load the sprite sheet
             this.spriteSheet = new Image();
 
             // mark when the sprite image has finished loading
@@ -133,6 +148,9 @@ class Character extends GameObject {
             this.frameCounter = 0; // count each frame rate refresh
             this.direction = 'down'; // Initial direction
         }
+
+        // Initialize the object's position and velocity
+        this.velocity = { x: 0, y: 0 };
 
         // Set the initial size and velocity of the object
         this.resize();
@@ -247,8 +265,8 @@ class Character extends GameObject {
         this.canvas.style.width = `${this.width}px`;
         this.canvas.style.height = `${this.height}px`;
         this.canvas.style.position = 'absolute';
-        this.canvas.style.left = `${this.transform.x}px`;
-        this.canvas.style.top = `${this.gameEnv.top + this.transform.y}px`;
+        this.canvas.style.left = `${this.position.x}px`;
+        this.canvas.style.top = `${this.gameEnv.top + this.position.y}px`;
         
         // Use the zIndex from data if provided, otherwise use a default of 10
         this.canvas.style.zIndex = (this.data && this.data.zIndex !== undefined) ? this.data.zIndex : "10";
@@ -303,36 +321,36 @@ class Character extends GameObject {
     move(x, y) {
 
         if(x != undefined){
-            this.transform.x = x;
+            this.position.x = x;
         }
         if(x != undefined){
-            this.transform.y = y;
+            this.position.y = y;
         }
         
         // Update or change position according to velocity events
-        this.transform.x += this.transform.xv;
-        this.transform.y += this.transform.yv;
+        this.position.x += this.velocity.x;
+        this.position.y += this.velocity.y;
 
         // Ensure the object stays within the canvas boundaries
         // Bottom of the canvas
-        if (this.transform.y + this.height > this.gameEnv.innerHeight) {
-            this.transform.y = this.gameEnv.innerHeight - this.height;
-            this.transform.yv = 0;
+        if (this.position.y + this.height > this.gameEnv.innerHeight) {
+            this.position.y = this.gameEnv.innerHeight - this.height;
+            this.velocity.y = 0;
         }
         // Top of the canvas
-        if (this.transform.y < 0) {
-            this.transform.y = 0;
-            this.transform.yv = 0;
+        if (this.position.y < 0) {
+            this.position.y = 0;
+            this.velocity.y = 0;
         }
         // Right of the canvas
-        if (this.transform.x + this.width > this.gameEnv.innerWidth) {
-            this.transform.x = this.gameEnv.innerWidth - this.width;
-            this.transform.xv = 0;
+        if (this.position.x + this.width > this.gameEnv.innerWidth) {
+            this.position.x = this.gameEnv.innerWidth - this.width;
+            this.velocity.x = 0;
         }
         // Left of the canvas
-        if (this.transform.x < 0) {
-            this.transform.x = 0;
-            this.transform.xv = 0;
+        if (this.position.x < 0) {
+            this.position.x = 0;
+            this.velocity.x = 0;
         }
     }
     
@@ -348,8 +366,8 @@ class Character extends GameObject {
         const newScale = { width: this.gameEnv.innerWidth, height: this.gameEnv.innerHeight };
 
         // Adjust the object's position proportionally
-        this.transform.x = (this.transform.x / this.scale.width) * newScale.width;
-        this.transform.y = (this.transform.y / this.scale.height) * newScale.height;
+        this.position.x = (this.position.x / this.scale.width) * newScale.width;
+        this.position.y = (this.position.y / this.scale.height) * newScale.height;
 
         // Update the object's scale to the new scale
         this.scale = newScale;
@@ -358,12 +376,27 @@ class Character extends GameObject {
         this.size = this.scale.height / this.scaleFactor; 
 
         // Recalculate the object's velocity steps based on the new scale (3x faster)
-        this.speedY = (this.scale.width / this.stepFactor) * 3;
-        this.speedX = (this.scale.height / this.stepFactor) * 3;
+        this.xVelocity = (this.scale.width / this.stepFactor) * 3;
+        this.yVelocity = (this.scale.height / this.stepFactor) * 3;
 
         // Set the object's width and height to the new size (object is a square)
         this.width = this.size;
         this.height = this.size;
+
+        // Ensure the object stays fully on screen after resize
+        // Clamp position to keep character visible
+        if (this.position.x + this.width > this.gameEnv.innerWidth) {
+            this.position.x = this.gameEnv.innerWidth - this.width;
+        }
+        if (this.position.y + this.height > this.gameEnv.innerHeight) {
+            this.position.y = this.gameEnv.innerHeight - this.height;
+        }
+        if (this.position.x < 0) {
+            this.position.x = 0;
+        }
+        if (this.position.y < 0) {
+            this.position.y = 0;
+        }
     }
     
 
